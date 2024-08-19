@@ -5,6 +5,12 @@ node_modules
 .vercel
 /.svelte-kit
 /build
+/dist
+
+# Nuitka Build Output
+*.dist/
+*.build/
+*.exe
 
 # OS
 .DS_Store
@@ -19,3 +25,13 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+.venv
+
+# pnpm
+pnpm-lock.yaml
+
+#python
+poetry.lock
+pycparser-*.whl
+__pycache__
