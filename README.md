@@ -8,10 +8,7 @@ This implementation with Websockets should allow for bi-directional communicatio
 
 ## Demo
 
-<video width="75%" controls>
-  <source src="./docs/demo.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<img src="./docs/pywry-webview-demo.gif" alt="Pywry Webview Demo" width="75%">
 
 ## Requirements
 
