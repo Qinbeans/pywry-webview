@@ -21,7 +21,10 @@ export const py_send_session = async (message: Command): Promise<RequestResponse
 	});
 };
 
-export const py_add_listener = (command: string, callback: (params: Record<string, unknown>) => void) => {
+export const py_add_listener = (
+	command: string,
+	callback: (params: Record<string, unknown>) => void
+) => {
 	py_session_state.update((py_session) => {
 		if (py_session === null) {
 			throw new Error('py_session is null');
@@ -29,7 +32,7 @@ export const py_add_listener = (command: string, callback: (params: Record<strin
 		py_session.on(command, callback);
 		return py_session;
 	});
-}
+};
 
 export const new_command = (command: string, parameters: Record<string, unknown>): Command => {
 	return {

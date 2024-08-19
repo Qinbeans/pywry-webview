@@ -38,7 +38,7 @@
 		} catch (error) {
 			console.error(error);
 		}
-	}
+	};
 
 	const clear_message = () => {
 		message = undefined;
@@ -70,5 +70,4 @@
 	{#if !$mock_state}
 		<p>State is false</p>
 	{/if}
-
 </main>

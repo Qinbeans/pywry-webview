@@ -16,7 +16,9 @@ async def hello_python(id: int, _api: Api, _ctx: Context) -> RequestResponse:
 
 
 async def trigger_state_change(id: int, api: Api, _ctx: Context) -> RequestResponse:
-    api.send_event("trigger_state_change", str(uuid4()), {"state": "changed"}) # No await needed as messages are queued
+    api.send_event(
+        "trigger_state_change", str(uuid4()), {"state": "changed"}
+    )  # No await needed as messages are queued
     return RequestResponse(id=id, data={"response": "State change triggered"})
 
 

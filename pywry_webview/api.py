@@ -12,6 +12,7 @@ from uvicorn import Config, Server
 from fastapi.responses import FileResponse, JSONResponse
 import os
 
+
 class Status(IntEnum):
     OK = 200
     CREATED = 201
@@ -149,7 +150,7 @@ class Api:
                 while not self.event_adder.empty():
                     event: Callback = self.event_adder.get()
                     self._events[event.name] = event
-                
+
                 while not self._outbound.empty():
                     command = self._outbound.get()
                     await websocket.send_text(command.model_dump_json())
@@ -186,10 +187,11 @@ class Api:
             exit()
 
         if path:
+
             @self.app.get("/")
             async def read_root():
                 return FileResponse(path)
-            
+
             @self.app.get("/{tail:path}")
             async def read_file(tail: str):
                 file_path = path.parent / tail
@@ -206,7 +208,9 @@ class Api:
         self.event_adder.put(event)
 
     def send_event(self, event: str, id: int, data: Dict[str, Any]):
-        command = Command(id=id, status=200, data=CommandData(command=event, parameters=data))
+        command = Command(
+            id=id, status=200, data=CommandData(command=event, parameters=data)
+        )
         self._outbound.put(command)
 
     async def _run_server(self):
