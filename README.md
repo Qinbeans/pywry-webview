@@ -24,4 +24,10 @@ just install
 just dev
 ```
 
-Things like `build` and `test` are WIP.
+## Build
+
+```bash
+just build
+```
+
+Things like `test` are WIP.

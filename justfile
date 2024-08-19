@@ -6,7 +6,9 @@ install:
     pnpm install
     python -m pip install -e .[dev]
 
-# build:
+build:
+    pnpm run build
+    python -m nuitka --onefile --include-data-dir=build=build ./pywry_webview/deploy.py --output-filename=pywry_webview
 
 # test:
 
