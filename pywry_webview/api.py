@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from pathlib import Path
 from uuid import uuid4
 from fastapi import FastAPI, WebSocket
 from pydantic import BaseModel, Field, TypeAdapter
@@ -6,7 +9,8 @@ from typing import Callable, Any, Dict, Literal, Optional, Annotated, Union
 import asyncio
 from enum import IntEnum
 from uvicorn import Config, Server
-
+from fastapi.responses import FileResponse, JSONResponse
+import os
 
 class Status(IntEnum):
     OK = 200
@@ -107,7 +111,7 @@ MessageDiscriminator = Annotated[
 
 class Callback(BaseModel):
     name: str = Field(default="callback", alias="name")
-    callback: Callable[[int, Context], RequestResponse] = Field(
+    callback: Callable[[int, Api, Context], RequestResponse] = Field(
         default=None, alias="callback"
     )
 
@@ -129,10 +133,11 @@ def validate_message_json(data: str) -> MessageDiscriminator:
     return type_adaptor.validate_json(data)
 
 
-class API:
-    def __init__(self, port: int = 5174):
+class Api:
+    def __init__(self, path: Optional[Path] = None, port: int = 5174):
         self.app = FastAPI()
-        self.event_adder = Queue()
+        self.event_adder: Queue[Callback] = Queue()
+        self._outbound: Queue[Command] = Queue()
         self._events: Dict[str, Callback] = {}
         self.context = Context()
         self.port = port
@@ -144,6 +149,10 @@ class API:
                 while not self.event_adder.empty():
                     event: Callback = self.event_adder.get()
                     self._events[event.name] = event
+                
+                while not self._outbound.empty():
+                    command = self._outbound.get()
+                    await websocket.send_text(command.model_dump_json())
 
                 try:
                     message = await websocket.receive_text()
@@ -154,7 +163,7 @@ class API:
                             command = data.command
                             if command in self._events:
                                 response = await self._events[command](
-                                    data.id, self.context
+                                    data.id, self, self.context
                                 )
                                 await websocket.send_text(response.model_dump_json())
                             else:
@@ -176,9 +185,29 @@ class API:
                     break
             exit()
 
+        if path:
+            @self.app.get("/")
+            async def read_root():
+                return FileResponse(path)
+            
+            @self.app.get("/{tail:path}")
+            async def read_file(tail: str):
+                file_path = path.parent / tail
+                print(f"File path: {file_path}")
+                if os.path.exists(file_path) and file_path.is_file():
+                    return FileResponse(file_path)
+                return JSONResponse(
+                    content={"detail": "File not found"},
+                    status_code=Status.NOT_FOUND,
+                )
+
     def add_event(self, event: Callback):
         """thread safe event adding"""
         self.event_adder.put(event)
+
+    def send_event(self, event: str, id: int, data: Dict[str, Any]):
+        command = Command(id=id, status=200, data=CommandData(command=event, parameters=data))
+        self._outbound.put(command)
 
     async def _run_server(self):
         config = Config(app=self.app, host="localhost", port=self.port, loop="asyncio")

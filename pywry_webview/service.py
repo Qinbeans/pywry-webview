@@ -1,6 +1,7 @@
 import sys
 from typing import Tuple, Callable
-from api import API, Callback, Context
+from pathlib import Path
+from pywry_webview.api import Api, Callback, Context
 from pywry import PyWry
 
 
@@ -15,8 +16,12 @@ class Service:
         self.window_name = window_name
         self.window_size = window_size
         self.handler = PyWry()
-        self.path_or_url = path_or_url
-        self.api = API()
+        self.path_or_url: str | Path = path_or_url
+        if isinstance(path_or_url, Path):
+            self.api = Api(path=path_or_url)
+            self.path_or_url = "http://localhost:5174"
+        else:
+            self.api = Api()
         self.debug = debug
 
     @property
@@ -27,17 +32,18 @@ class Service:
         </script>
         """
 
-    def add_event(self, event: str, callback_fn: Callable[[Context], None]):
+    def add_event(self, event: str, callback_fn: Callable[[int, Api, Context], None]):
         self.api.add_event(Callback(name=event, callback=callback_fn))
 
     def run(self):
         try:
             outgoing = dict(
-                html=self._script,
                 width=self.window_size[0],
                 height=self.window_size[1],
                 title=self.window_name,
+                html=self._script,
             )
+            print(f"Outgoing: {outgoing}")
             self.handler.send_outgoing(outgoing)
             self.handler.start(debug=self.debug)
             self.handler.loop.run_until_complete(self.api.main_loop())

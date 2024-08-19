@@ -11,6 +11,7 @@ node_modules
 *.dist/
 *.build/
 *.exe
+*.onefile-build/
 
 # OS
 .DS_Store
@@ -35,3 +36,5 @@ pnpm-lock.yaml
 poetry.lock
 pycparser-*.whl
 __pycache__
+
+poetry.lock

@@ -5,11 +5,13 @@ export type PySession = {
 	ws: WebSocket;
 	send: (message: Message) => void;
 	reconnect?: () => void;
+	on: (event: string, callback: (params: Record<string, unknown>) => void) => void;
 };
 
 export const init_py_session = (url: string): PySession => {
 	let ws = new WebSocket(`${url}/api/ws`);
 	let is_open = false;
+	const listeners: { [key: string]: (params: Record<string, unknown>) => void } = {};
 
 	ws.onopen = () => {
 		is_open = true;
@@ -19,6 +21,13 @@ export const init_py_session = (url: string): PySession => {
 		const message = JSON.parse(event.data) as Message;
 		if (message.type === 'response') {
 			py_response_state.set(message);
+		} else if (message.type === 'command') {
+			const callback = listeners[message.data.command];
+			if (callback) {
+				callback(message.data.parameters);
+			}
+		} else {
+			console.error('Unknown message type:', message);
 		}
 	};
 
@@ -42,5 +51,9 @@ export const init_py_session = (url: string): PySession => {
 		ws = new WebSocket(`${url}/api/ws`);
 	};
 
-	return { ws, send, reconnect };
+	const on = (event: string, callback: (params: Record<string, unknown>) => void) => {
+		listeners[event] = callback;
+	};
+
+	return { ws, send, reconnect, on };
 };
