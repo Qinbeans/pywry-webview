@@ -4,6 +4,7 @@ dev:
 
 install:
     pnpm install
+    python -m pip install git+https://github.com/JKISoftware/wrypy
     python -m pip install -e .[dev]
 
 build:

@@ -1,9 +1,12 @@
 import sys
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Optional
 from pathlib import Path
 from pywry_webview.api import Api, Callback, Context
-from pywry import PyWry
-
+from wrypy.wrypy import WebViewWindow
+from wrypy.models import WebViewConfig, WebViewOnOffOptions, WebViewPosition, WebViewSize
+import asyncio
+import threading
+import time
 
 class Service:
     def __init__(
@@ -15,7 +18,7 @@ class Service:
     ):
         self.window_name = window_name
         self.window_size = window_size
-        self.handler = PyWry()
+        self.handler: Optional[WebViewWindow] = None
         self.path_or_url: str | Path = path_or_url
         if isinstance(path_or_url, Path):
             self.api = Api(path=path_or_url)
@@ -24,29 +27,30 @@ class Service:
             self.api = Api()
         self.debug = debug
 
-    @property
-    def _script(self):
-        return f"""
-        <script>
-            window.location.replace("{self.path_or_url}");
-        </script>
-        """
-
     def add_event(self, event: str, callback_fn: Callable[[int, Api, Context], None]):
         self.api.add_event(Callback(name=event, callback=callback_fn))
 
     def run(self):
         try:
-            outgoing = dict(
-                width=self.window_size[0],
-                height=self.window_size[1],
-                title=self.window_name,
-                html=self._script,
+            self.handler = WebViewWindow(
+                WebViewConfig(
+                    title=self.window_name,
+                    url=self.path_or_url,
+                    size=WebViewSize(width=self.window_size[0], height=self.window_size[1]),
+                    position=WebViewPosition(x=0, y=0),
+                    on_off=WebViewOnOffOptions(
+                        debug=self.debug,
+                    ),
+                ).model_dump_json()
             )
-            print(f"Outgoing: {outgoing}")
-            self.handler.send_outgoing(outgoing)
-            self.handler.start(debug=self.debug)
-            self.handler.loop.run_until_complete(self.api.main_loop())
+            
+            loop_thread = threading.Thread(target=lambda: asyncio.run(self.api.main_loop()))
+            loop_thread.start()
+
+            while self.handler.is_running():
+                print("Running...")
+                time.sleep(1)
+
         except KeyboardInterrupt:
             print("Keyboard interrupt detected. Exiting...")
         except Exception as e:
