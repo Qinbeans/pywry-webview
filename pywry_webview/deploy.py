@@ -21,7 +21,7 @@ async def trigger_state_change(id: int, api: Api, _ctx: Context) -> RequestRespo
 
 
 def main():
-    service = Service(path_or_url=Path(__file__).parent.parent / "build" / "index.html", debug=True)
+    service = Service(path_or_url=Path(__file__).parent / "build" / "index.html", debug=True)
     service.add_event("joined", joined)
     service.add_event("hello_python", hello_python)
     service.add_event("trigger_state_change", trigger_state_change)
